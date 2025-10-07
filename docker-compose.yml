@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # PostgreSQL tietokanta
+  database:
+    image: postgres:15-alpine
+    container_name: elainsuoja-db
+    environment:
+      POSTGRES_USER: elainsuoja
+      POSTGRES_PASSWORD: salasana123
+      POSTGRES_DB: elainsuoja_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - elainsuoja-network
+
+  # Server A - Pääpalvelin
+  server-a:
+    build: ./server-a
+    container_name: elainsuoja-server-a
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://elainsuoja:salasana123@database:5432/elainsuoja_db
+      - SERVER_B_URL=http://server-b:3002
+    depends_on:
+      - database
+    networks:
+      - elainsuoja-network
+
+  # Server B - Adoptiopalvelin
+  server-b:
+    build: ./server-b
+    container_name: elainsuoja-server-b
+    ports:
+      - "3002:3002"
+    environment:
+      - DATABASE_URL=postgresql://elainsuoja:salasana123@database:5432/elainsuoja_db
+    depends_on:
+      - database
+    networks:
+      - elainsuoja-network
+
+  # Frontend - React Vite
+  frontend:
+    build: ./frontend
+    container_name: elainsuoja-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3001
+    depends_on:
+      - server-a
+    networks:
+      - elainsuoja-network
+
+volumes:
+  postgres_data:
+
+networks:
+  elainsuoja-network:
+    driver: bridge
