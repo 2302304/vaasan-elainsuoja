@@ -16,6 +16,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - elainsuoja-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elainsuoja"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Server A - Pääpalvelin
   server-a:
@@ -24,10 +29,15 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=postgresql://elainsuoja:salasana123@database:5432/elainsuoja_db
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_NAME=elainsuoja_db
+      - DB_USER=elainsuoja
+      - DB_PASSWORD=salasana123
       - SERVER_B_URL=http://server-b:3002
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     networks:
       - elainsuoja-network
 
@@ -38,9 +48,14 @@ services:
     ports:
       - "3002:3002"
     environment:
-      - DATABASE_URL=postgresql://elainsuoja:salasana123@database:5432/elainsuoja_db
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_NAME=elainsuoja_db
+      - DB_USER=elainsuoja
+      - DB_PASSWORD=salasana123
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     networks:
       - elainsuoja-network
 
@@ -51,7 +66,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:3001
+      - VITE_API_URL=http://localhost:3001/api
     depends_on:
       - server-a
     networks:
