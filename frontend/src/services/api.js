@@ -2,9 +2,9 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// Hae kaikki eläimet
-export const getAllAnimals = async () => {
-  const response = await axios.get(`${API_URL}/animals`);
+// Hae kaikki eläimet (nyt parametreilla!)
+export const getAllAnimals = async (params = {}) => {
+  const response = await axios.get(`${API_URL}/animals`, { params });
   return response.data;
 };
 
